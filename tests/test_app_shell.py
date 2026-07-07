@@ -48,3 +48,12 @@ def test_upload_script_supports_validation_remove_and_reorder():
     assert "removeFile" in response.text
     assert "moveFile" in response.text
     assert "mergeOrderInput.value" in response.text
+
+
+def test_upload_script_submits_jobs_and_polls_progress():
+    response = client.get("/static/app.js")
+
+    assert 'xhr.open("POST", "/jobs")' in response.text
+    assert "xhr.upload.addEventListener" in response.text
+    assert "pollJob" in response.text
+    assert "fetch(`/jobs/${jobId}`)" in response.text
