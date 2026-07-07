@@ -37,6 +37,23 @@ function showProgress(message, percent) {
   progressPanel.textContent = `${message} (${percent}%)`;
 }
 
+function showFailure(job) {
+  progressPanel.replaceChildren();
+  const message = document.createElement("p");
+  message.textContent = job.message;
+  progressPanel.append(message);
+
+  if (job.error_detail) {
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "Technical details";
+    const pre = document.createElement("pre");
+    pre.textContent = job.error_detail;
+    details.append(summary, pre);
+    progressPanel.append(details);
+  }
+}
+
 function validateFiles(files) {
   const nextFiles = [...chosenFiles, ...files];
 
@@ -170,6 +187,9 @@ function pollJob(jobId) {
         link.href = `/jobs/${job.job_id}/download`;
         link.textContent = `Download ${job.output_filename}`;
         progressPanel.append(link);
+      }
+      if (job.phase === "failed") {
+        showFailure(job);
       }
       if (!["ready", "failed", "expired"].includes(job.phase)) {
         window.setTimeout(() => pollJob(job.job_id), 500);

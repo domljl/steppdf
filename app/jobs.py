@@ -21,6 +21,15 @@ class ConversionJob:
     message: str
     output_filename: str
     output_path: str | None = None
+    error_file: str | None = None
+    error_detail: str | None = None
+
+
+class JobFailure(Exception):
+    def __init__(self, message: str, file_name: str | None = None, detail: str | None = None) -> None:
+        super().__init__(message)
+        self.file_name = file_name
+        self.detail = detail
 
 
 async def libreoffice_convert(source: Path, destination: Path) -> None:
@@ -88,10 +97,12 @@ class JobStore:
                     merge_pdfs(pdfs, output)
                     self.jobs[job_id].output_path = str(output)
                     await self._set(job_id, "ready", 100, "Ready")
-        except TimeoutError:
-            await self._set(job_id, "failed", 100, "Conversion timed out")
+        except TimeoutError as error:
+            await self._fail(job_id, "Conversion timed out.", detail=str(error))
+        except JobFailure as error:
+            await self._fail(job_id, str(error), file_name=error.file_name, detail=error.detail)
         except Exception as error:
-            await self._set(job_id, "failed", 100, str(error))
+            await self._fail(job_id, "Could not create merged PDF.", detail=str(error))
 
     async def _convert_files(self, job_id: str, files: list[Path], job_dir: Path) -> list[Path]:
         converted_dir = job_dir / "converted"
@@ -104,7 +115,11 @@ class JobStore:
                 pdfs.append(path)
                 continue
             output = converted_dir / f"{path.stem}.pdf"
-            await self.converter(path, output)
+            try:
+                await self.converter(path, output)
+            except Exception as error:
+                file_name = path.name.split("-", 1)[-1]
+                raise JobFailure(f"Could not convert {file_name}.", file_name=file_name, detail=str(error)) from error
             pdfs.append(output)
 
         return pdfs
@@ -114,6 +129,13 @@ class JobStore:
         job.phase = phase
         job.percent = percent
         job.message = message
+
+    async def _fail(self, job_id: str, message: str, file_name: str | None = None, detail: str | None = None) -> None:
+        await self._set(job_id, "failed", 100, message)
+        job = self.jobs[job_id]
+        job.output_path = None
+        job.error_file = file_name
+        job.error_detail = detail
 
 
 job_store = JobStore()
