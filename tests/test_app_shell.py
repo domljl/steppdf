@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -18,19 +20,12 @@ def test_homepage_is_conversion_tool_shell():
 
     assert response.status_code == 200
     assert "StepPDF" in response.text
-    assert "Select files" in response.text
-    assert "Add more files" in response.text
+    assert "Browse files" in response.text
     assert "Auto convert and combine PDFs in the order you want." in response.text
-    assert "Selected files" in response.text
-    assert "Output filename" in response.text
-    assert "merged_by_dom.pdf" in response.text
-    assert "Merge PDF" in response.text
-    assert "Progress" in response.text
     assert 'id="file-input"' in response.text
     assert 'id="start-page"' in response.text
-    assert 'id="files-page"' in response.text
-    assert 'id="selected-files"' in response.text
-    assert "/static/app.js" in response.text
+    assert "_app/immutable" in response.text
+    assert "/static/app.js" not in response.text
 
 
 def test_homepage_exposes_accepted_document_constraints():
@@ -42,31 +37,28 @@ def test_homepage_exposes_accepted_document_constraints():
     assert "Files are automatically deleted after one hour." in response.text
 
 
-def test_upload_script_supports_validation_remove_and_reorder():
-    response = client.get("/static/app.js")
+def test_built_frontend_assets_include_validation_remove_and_reorder():
+    assets = "\n".join(path.read_text() for path in sorted(Path("frontend/build/_app").rglob("*.js")))
 
-    assert response.status_code == 200
-    assert "Unsupported file type" in response.text
-    assert "You can add up to 50 files." in response.text
-    assert "Total input must be 1 GB or less." in response.text
-    assert "removeFile" in response.text
-    assert "moveFile" in response.text
-    assert "mergeOrderInput.value" in response.text
-    assert 'document.body.addEventListener("drop"' in response.text
+    assert "Unsupported file type" in assets
+    assert "You can add up to 50 files." in assets
+    assert "Total input must be 1 GB or less." in assets
+    assert "Remove file" in assets
+    assert "Move file up" in assets
+    assert "merge_order" in assets
 
 
-def test_upload_script_submits_jobs_and_polls_progress():
-    response = client.get("/static/app.js")
+def test_built_frontend_submits_jobs_and_polls_progress():
+    assets = "\n".join(path.read_text() for path in sorted(Path("frontend/build/_app").rglob("*.js")))
 
-    assert 'xhr.open("POST", "/jobs")' in response.text
-    assert "xhr.upload.addEventListener" in response.text
-    assert "pollJob" in response.text
-    assert "fetch(`/jobs/${jobId}`)" in response.text
+    assert 'open("POST","/jobs")' in assets
+    assert "upload.addEventListener" in assets
+    assert "fetch(`/jobs/${" in assets
+    assert "setTimeout" in assets
 
 
-def test_upload_script_shows_failed_job_details():
-    response = client.get("/static/app.js")
+def test_built_frontend_shows_failed_job_details():
+    assets = "\n".join(path.read_text() for path in sorted(Path("frontend/build/_app").rglob("*.js")))
 
-    assert "Technical details" in response.text
-    assert 'document.createElement("details")' in response.text
-    assert "error_detail" in response.text
+    assert "Technical details" in assets
+    assert "error_detail" in assets

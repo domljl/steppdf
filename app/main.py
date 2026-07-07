@@ -1,32 +1,19 @@
 from typing import Annotated
-
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from pathlib import Path
 
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
 from app.jobs import job_store
 
 app = FastAPI(title="StepPDF")
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-templates = Jinja2Templates(directory="app/templates")
+frontend_build = Path("frontend/build")
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
-
-
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request,
-        "index.html",
-        {"default_filename": "merged_by_dom.pdf"},
-    )
 
 
 @app.post("/jobs")
@@ -58,3 +45,6 @@ def download_job(job_id: str) -> FileResponse:
         media_type="application/pdf",
         filename=job.output_filename,
     )
+
+
+app.mount("/", StaticFiles(directory=frontend_build, html=True, check_dir=False), name="frontend")
