@@ -27,3 +27,24 @@ def test_homepage_is_conversion_tool_shell():
     assert 'id="file-input"' in response.text
     assert 'id="selected-files"' in response.text
     assert "/static/app.js" in response.text
+
+
+def test_homepage_exposes_accepted_document_constraints():
+    response = client.get("/")
+
+    assert 'data-max-files="50"' in response.text
+    assert 'data-max-total-bytes="1073741824"' in response.text
+    assert 'name="merge_order"' in response.text
+    assert "Files are processed for conversion and automatically deleted after one hour." in response.text
+
+
+def test_upload_script_supports_validation_remove_and_reorder():
+    response = client.get("/static/app.js")
+
+    assert response.status_code == 200
+    assert "Unsupported file type" in response.text
+    assert "You can add up to 50 files." in response.text
+    assert "Total input must be 1 GB or less." in response.text
+    assert "removeFile" in response.text
+    assert "moveFile" in response.text
+    assert "mergeOrderInput.value" in response.text
