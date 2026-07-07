@@ -9,6 +9,11 @@ const progressPanel = document.querySelector("#progress-panel");
 const acceptedExtensions = new Set(["pptx", "ppt", "docx", "pdf"]);
 const maxFiles = Number(form.dataset.maxFiles);
 const maxTotalBytes = Number(form.dataset.maxTotalBytes);
+const emptyStateClass = "mt-1 text-sm text-zinc-500";
+const fileRowClass = "grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-2 rounded-2xl border border-white/10 bg-zinc-950/80 p-3 text-sm sm:text-base";
+const fileNameClass = "min-w-0 truncate font-medium text-zinc-100";
+const fileButtonClass = "rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-medium text-zinc-300 transition hover:border-emerald-300/50 hover:text-emerald-100 disabled:cursor-not-allowed disabled:opacity-40";
+const downloadClass = "inline-flex w-fit rounded-xl bg-emerald-300 px-5 py-3 font-semibold text-zinc-950 no-underline transition hover:bg-emerald-200 active:translate-y-px";
 let chosenFiles = [];
 let nextFileId = 1;
 
@@ -40,14 +45,18 @@ function showProgress(message, percent) {
 function showFailure(job) {
   progressPanel.replaceChildren();
   const message = document.createElement("p");
+  message.className = "font-semibold text-red-300";
   message.textContent = job.message;
   progressPanel.append(message);
 
   if (job.error_detail) {
     const details = document.createElement("details");
+    details.className = "mt-3";
     const summary = document.createElement("summary");
+    summary.className = "cursor-pointer font-semibold text-emerald-200";
     summary.textContent = "Technical details";
     const pre = document.createElement("pre");
+    pre.className = "mt-3 overflow-auto rounded-xl border border-white/10 bg-zinc-950 p-3 text-sm text-zinc-300";
     pre.textContent = job.error_detail;
     details.append(summary, pre);
     progressPanel.append(details);
@@ -79,7 +88,7 @@ function renderFiles() {
 
   if (chosenFiles.length === 0) {
     const item = document.createElement("li");
-    item.className = "empty-list";
+    item.className = emptyStateClass;
     item.textContent = "No files selected yet.";
     selectedFiles.append(item);
     syncMergeOrder();
@@ -88,15 +97,18 @@ function renderFiles() {
 
   for (const [index, entry] of chosenFiles.entries()) {
     const item = document.createElement("li");
+    item.className = fileRowClass;
     item.draggable = true;
     item.dataset.fileId = entry.id;
 
     const name = document.createElement("span");
+    name.className = fileNameClass;
     name.textContent = entry.file.name;
     item.append(name);
 
     const up = document.createElement("button");
     up.type = "button";
+    up.className = fileButtonClass;
     up.textContent = "Up";
     up.disabled = index === 0;
     up.addEventListener("click", () => moveFile(index, index - 1));
@@ -104,6 +116,7 @@ function renderFiles() {
 
     const down = document.createElement("button");
     down.type = "button";
+    down.className = fileButtonClass;
     down.textContent = "Down";
     down.disabled = index === chosenFiles.length - 1;
     down.addEventListener("click", () => moveFile(index, index + 1));
@@ -111,6 +124,7 @@ function renderFiles() {
 
     const remove = document.createElement("button");
     remove.type = "button";
+    remove.className = fileButtonClass;
     remove.textContent = "Remove";
     remove.addEventListener("click", () => removeFile(entry.id));
     item.append(remove);
@@ -185,6 +199,7 @@ function pollJob(jobId) {
         progressPanel.replaceChildren();
         const link = document.createElement("a");
         link.href = `/jobs/${job.job_id}/download`;
+        link.className = downloadClass;
         link.textContent = `Download ${job.output_filename}`;
         progressPanel.append(link);
       }
