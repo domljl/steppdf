@@ -126,6 +126,13 @@ h1 {
   cursor: grab;
 }
 
+.file-list span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .file-list button {
   padding: 6px 9px;
   background: #e9eef1;
