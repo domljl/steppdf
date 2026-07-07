@@ -180,18 +180,19 @@ def test_ready_job_metadata_survives_restart(tmp_path):
     assert (tmp_path / job_id / "job.json").exists()
 
 
-def test_unfinished_jobs_are_failed_after_restart(tmp_path):
-    job_dir = tmp_path / "queued"
+@pytest.mark.parametrize("phase", ["queued", "converting", "merging"])
+def test_unfinished_jobs_are_failed_after_restart(tmp_path, phase):
+    job_dir = tmp_path / phase
     job_dir.mkdir()
     (job_dir / "job.json").write_text(
-        '{"job_id":"queued","phase":"converting","percent":10,"message":"Converting",'
+        f'{{"job_id":"{phase}","phase":"{phase}","percent":10,"message":"Converting",'
         '"output_filename":"out.pdf","output_path":null,"error_file":null,"error_detail":null,'
         '"created_at":1.0,"expires_at":9999.0}'
     )
 
     restarted = JobStore(root=tmp_path, clock=lambda: 2.0)
 
-    job = restarted.snapshot("queued")
+    job = restarted.snapshot(phase)
     assert job["phase"] == "failed"
     assert job["message"] == "Job stopped because the app restarted."
 
