@@ -1,3 +1,14 @@
+FROM node:26-slim AS frontend
+
+WORKDIR /app/frontend
+
+COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
+RUN corepack enable \
+    && pnpm install --frozen-lockfile
+
+COPY frontend ./
+RUN pnpm build
+
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -14,6 +25,7 @@ RUN pip install --no-cache-dir uv \
     && uv sync --frozen --no-dev
 
 COPY app ./app
+COPY --from=frontend /app/frontend/build ./frontend/build
 
 EXPOSE 8000
 
