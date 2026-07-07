@@ -17,18 +17,22 @@
           </div>
         </header>
 
-        <form class="workspace">
+        <form class="workspace" id="conversion-form" data-max-files="50" data-max-total-bytes="1073741824">
+          <p class="notice">Files are processed for conversion and automatically deleted after one hour.</p>
+
           <label class="dropzone" id="dropzone">
             <input id="file-input" type="file" multiple accept=".pptx,.ppt,.docx,.pdf">
             <span>Drop documents here</span>
             <small>or browse for PPTX, PPT, DOCX, and PDF files</small>
           </label>
+          <div class="message" id="file-message" role="status" aria-live="polite"></div>
 
           <section class="panel" aria-labelledby="selected-files-heading">
             <h2 id="selected-files-heading">Selected files</h2>
             <ol class="file-list" id="selected-files">
               <li class="empty-list">No files selected yet.</li>
             </ol>
+            <input id="merge-order" name="merge_order" type="hidden" value="[]">
           </section>
 
           <label class="field">
@@ -36,7 +40,7 @@
             <input name="output_filename" value="{{ default_filename }}">
           </label>
 
-          <button type="button">Convert</button>
+          <button id="convert-button" type="button" disabled>Convert</button>
 
           <section class="panel" aria-labelledby="progress-heading">
             <h2 id="progress-heading">Progress</h2>

@@ -50,10 +50,16 @@ h1 {
 
 .dropzone,
 .panel,
-.field {
+.field,
+.notice {
   border: 1px solid #d7dee2;
   border-radius: 8px;
   background: #fff;
+}
+
+.notice {
+  padding: 14px 16px;
+  color: #50616b;
 }
 
 .dropzone {
@@ -106,10 +112,29 @@ h1 {
 }
 
 .file-list li:not(.empty-list) {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 8px;
+  align-items: center;
   border: 1px solid #d7dee2;
   border-radius: 6px;
   padding: 10px 12px;
   background: #f8fafb;
+}
+
+.file-list li[draggable="true"] {
+  cursor: grab;
+}
+
+.file-list button {
+  padding: 6px 9px;
+  background: #e9eef1;
+  color: #182026;
+}
+
+.message {
+  min-height: 20px;
+  color: #9c2f24;
 }
 
 .field {
@@ -136,6 +161,11 @@ button {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 @media (max-width: 640px) {
