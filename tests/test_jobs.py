@@ -25,6 +25,14 @@ def wait_until_ready(job_id: str) -> dict:
     return body
 
 
+def wait_until_done(job_id: str) -> dict:
+    for _ in range(10):
+        body = client.get(f"/jobs/{job_id}").json()
+        if body["phase"] in {"ready", "failed"}:
+            return body
+    return body
+
+
 def test_create_conversion_job_returns_job_status():
     response = client.post(
         "/jobs",
@@ -117,3 +125,30 @@ def test_office_documents_are_converted_before_merge(tmp_path):
     assert job["phase"] == "ready"
     assert download.headers["content-disposition"] == 'attachment; filename="merged_by_dom.pdf"'
     assert len(PdfReader(__import__("io").BytesIO(download.content)).pages) == 1
+
+
+def test_failed_file_fails_whole_job_without_download(tmp_path):
+    job_store.root = tmp_path
+
+    async def fake_converter(source, destination):
+        raise RuntimeError("LibreOffice said no")
+
+    job_store.converter = fake_converter
+    response = client.post(
+        "/jobs",
+        files=[
+            ("files", ("first.pdf", pdf_bytes(1), "application/pdf")),
+            ("files", ("bad.pptx", b"deck", "application/vnd.openxmlformats-officedocument.presentationml.presentation")),
+        ],
+        data={"merge_order": '["first.pdf","bad.pptx"]', "output_filename": "never.pdf"},
+    )
+    job_id = response.json()["job_id"]
+
+    job = wait_until_done(job_id)
+    download = client.get(f"/jobs/{job_id}/download")
+
+    assert job["phase"] == "failed"
+    assert job["message"] == "Could not convert bad.pptx."
+    assert job["error_file"] == "bad.pptx"
+    assert "LibreOffice said no" in job["error_detail"]
+    assert download.status_code == 404

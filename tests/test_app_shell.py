@@ -57,3 +57,11 @@ def test_upload_script_submits_jobs_and_polls_progress():
     assert "xhr.upload.addEventListener" in response.text
     assert "pollJob" in response.text
     assert "fetch(`/jobs/${jobId}`)" in response.text
+
+
+def test_upload_script_shows_failed_job_details():
+    response = client.get("/static/app.js")
+
+    assert "Technical details" in response.text
+    assert 'document.createElement("details")' in response.text
+    assert "error_detail" in response.text
