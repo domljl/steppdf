@@ -1,16 +1,20 @@
 import asyncio
+import json
 import os
 import shutil
 import subprocess
+import time
 import uuid
 from dataclasses import dataclass, asdict
 from pathlib import Path
+from typing import Callable
 
 from fastapi import UploadFile
 from pypdf import PdfWriter
 
 
 JOB_TIMEOUT_SECONDS = 600
+JOB_EXPIRY_SECONDS = 3600
 
 
 @dataclass
@@ -23,6 +27,8 @@ class ConversionJob:
     output_path: str | None = None
     error_file: str | None = None
     error_detail: str | None = None
+    created_at: float = 0
+    expires_at: float = 0
 
 
 class JobFailure(Exception):
@@ -56,16 +62,29 @@ def merge_pdfs(paths: list[Path], output: Path) -> None:
 
 
 class JobStore:
-    def __init__(self, concurrency_limit: int | None = None, root: Path | None = None) -> None:
+    job_class = ConversionJob
+
+    def __init__(
+        self,
+        concurrency_limit: int | None = None,
+        root: Path | None = None,
+        clock: Callable[[], float] = time.time,
+        expiry_seconds: int = JOB_EXPIRY_SECONDS,
+    ) -> None:
         self.jobs: dict[str, ConversionJob] = {}
         self.semaphore = asyncio.Semaphore(concurrency_limit or int(os.getenv("CONVERSION_CONCURRENCY", "2")))
         self.root = root or Path(os.getenv("JOB_ROOT", "tmp/jobs"))
         self.converter = libreoffice_convert
+        self.clock = clock
+        self.expiry_seconds = expiry_seconds
+        self.load()
 
-    def snapshot(self, job_id: str) -> dict[str, str | int | None]:
+    def snapshot(self, job_id: str) -> dict[str, str | int | float | None]:
+        self.cleanup_expired()
         return asdict(self.jobs[job_id])
 
-    async def create(self, files: list[UploadFile], merge_order: str, output_filename: str) -> dict[str, str | int | None]:
+    async def create(self, files: list[UploadFile], merge_order: str, output_filename: str) -> dict[str, str | int | float | None]:
+        self.cleanup_expired()
         job_id = uuid.uuid4().hex
         job_dir = self.root / job_id
         input_dir = job_dir / "inputs"
@@ -82,10 +101,39 @@ class JobStore:
             percent=0,
             message="Queued",
             output_filename=output_filename or "merged_by_dom.pdf",
+            created_at=self.clock(),
+            expires_at=self.clock() + self.expiry_seconds,
         )
+        self.persist(job_id)
         _ = merge_order
         asyncio.create_task(self._run(job_id, saved_files, job_dir))
         return self.snapshot(job_id)
+
+    def load(self) -> None:
+        for metadata in self.root.glob("*/job.json"):
+            data = json.loads(metadata.read_text())
+            job = self.job_class(**data)
+            if job.phase in {"queued", "converting", "merging"}:
+                job.phase = "failed"
+                job.percent = 100
+                job.message = "Job stopped because the app restarted."
+                job.output_path = None
+            self.jobs[job.job_id] = job
+            self.persist(job.job_id)
+
+    def persist(self, job_id: str) -> None:
+        job_dir = self.root / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+        (job_dir / "job.json").write_text(json.dumps(asdict(self.jobs[job_id])))
+
+    def cleanup_expired(self) -> None:
+        for job_id, job in list(self.jobs.items()):
+            if job.expires_at and self.clock() >= job.expires_at:
+                job.phase = "expired"
+                job.percent = 100
+                job.message = "This job has expired."
+                job.output_path = None
+                shutil.rmtree(self.root / job_id, ignore_errors=True)
 
     async def _run(self, job_id: str, files: list[Path], job_dir: Path) -> None:
         try:
@@ -129,6 +177,7 @@ class JobStore:
         job.phase = phase
         job.percent = percent
         job.message = message
+        self.persist(job_id)
 
     async def _fail(self, job_id: str, message: str, file_name: str | None = None, detail: str | None = None) -> None:
         await self._set(job_id, "failed", 100, message)
@@ -136,6 +185,7 @@ class JobStore:
         job.output_path = None
         job.error_file = file_name
         job.error_detail = detail
+        self.persist(job_id)
 
 
 job_store = JobStore()

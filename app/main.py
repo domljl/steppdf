@@ -34,12 +34,12 @@ async def create_job(
     files: Annotated[list[UploadFile], File()],
     merge_order: Annotated[str, Form()],
     output_filename: Annotated[str, Form()] = "merged_by_dom.pdf",
-) -> dict[str, str | int | None]:
+) -> dict[str, str | int | float | None]:
     return await job_store.create(files, merge_order, output_filename)
 
 
 @app.get("/jobs/{job_id}")
-def get_job(job_id: str) -> dict[str, str | int | None]:
+def get_job(job_id: str) -> dict[str, str | int | float | None]:
     if job_id not in job_store.jobs:
         raise HTTPException(status_code=404, detail="Job not found")
     return job_store.snapshot(job_id)
@@ -49,6 +49,7 @@ def get_job(job_id: str) -> dict[str, str | int | None]:
 def download_job(job_id: str) -> FileResponse:
     if job_id not in job_store.jobs:
         raise HTTPException(status_code=404, detail="Job not found")
+    job_store.snapshot(job_id)
     job = job_store.jobs[job_id]
     if job.phase != "ready" or not job.output_path:
         raise HTTPException(status_code=404, detail="Merged PDF not ready")
