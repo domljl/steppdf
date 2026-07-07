@@ -5,6 +5,7 @@ const form = document.querySelector("#conversion-form");
 const fileMessage = document.querySelector("#file-message");
 const mergeOrderInput = document.querySelector("#merge-order");
 const convertButton = document.querySelector("#convert-button");
+const progressPanel = document.querySelector("#progress-panel");
 const acceptedExtensions = new Set(["pptx", "ppt", "docx", "pdf"]);
 const maxFiles = Number(form.dataset.maxFiles);
 const maxTotalBytes = Number(form.dataset.maxTotalBytes);
@@ -30,6 +31,10 @@ function syncFileInput() {
 function syncMergeOrder() {
   mergeOrderInput.value = JSON.stringify(chosenFiles.map((entry) => entry.file.name));
   convertButton.disabled = chosenFiles.length === 0;
+}
+
+function showProgress(message, percent) {
+  progressPanel.textContent = `${message} (${percent}%)`;
 }
 
 function validateFiles(files) {
@@ -152,4 +157,36 @@ dropzone.addEventListener("dragover", (event) => {
 dropzone.addEventListener("drop", (event) => {
   event.preventDefault();
   addFiles([...event.dataTransfer.files]);
+});
+
+function pollJob(jobId) {
+  fetch(`/jobs/${jobId}`)
+    .then((response) => response.json())
+    .then((job) => {
+      showProgress(job.message, job.percent);
+      if (!["ready", "failed", "expired"].includes(job.phase)) {
+        window.setTimeout(() => pollJob(job.job_id), 500);
+      }
+    });
+}
+
+convertButton.addEventListener("click", () => {
+  const formData = new FormData(form);
+  for (const entry of chosenFiles) {
+    formData.append("files", entry.file);
+  }
+
+  const xhr = new XMLHttpRequest();
+  xhr.upload.addEventListener("progress", (event) => {
+    if (event.lengthComputable) {
+      showProgress("Uploading", Math.round((event.loaded / event.total) * 100));
+    }
+  });
+  xhr.addEventListener("load", () => {
+    const job = JSON.parse(xhr.responseText);
+    showProgress(job.message, job.percent);
+    pollJob(job.job_id);
+  });
+  xhr.open("POST", "/jobs");
+  xhr.send(formData);
 });
