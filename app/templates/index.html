@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Step PDF</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/app.js" defer></script>
   </head>
   <body>
     <main class="page">
@@ -17,15 +18,17 @@
         </header>
 
         <form class="workspace">
-          <label class="dropzone">
-            <input type="file" multiple accept=".pptx,.ppt,.docx,.pdf">
+          <label class="dropzone" id="dropzone">
+            <input id="file-input" type="file" multiple accept=".pptx,.ppt,.docx,.pdf">
             <span>Drop documents here</span>
             <small>or browse for PPTX, PPT, DOCX, and PDF files</small>
           </label>
 
           <section class="panel" aria-labelledby="selected-files-heading">
             <h2 id="selected-files-heading">Selected files</h2>
-            <div class="empty-list">No files selected yet.</div>
+            <ol class="file-list" id="selected-files">
+              <li class="empty-list">No files selected yet.</li>
+            </ol>
           </section>
 
           <label class="field">

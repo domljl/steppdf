@@ -97,6 +97,21 @@ h1 {
   color: #64757f;
 }
 
+.file-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-list li:not(.empty-list) {
+  border: 1px solid #d7dee2;
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #f8fafb;
+}
+
 .field {
   display: grid;
   gap: 8px;

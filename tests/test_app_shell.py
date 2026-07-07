@@ -24,3 +24,6 @@ def test_homepage_is_conversion_tool_shell():
     assert "merged_by_dom.pdf" in response.text
     assert "Convert" in response.text
     assert "Progress" in response.text
+    assert 'id="file-input"' in response.text
+    assert 'id="selected-files"' in response.text
+    assert "/static/app.js" in response.text
