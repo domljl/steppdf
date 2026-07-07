@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 from pypdf import PdfReader, PdfWriter
 
@@ -6,6 +7,15 @@ from app.jobs import job_store
 
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def reset_job_store():
+    root = job_store.root
+    converter = job_store.converter
+    yield
+    job_store.root = root
+    job_store.converter = converter
 
 
 def pdf_bytes(page_count: int = 1) -> bytes:
