@@ -61,8 +61,8 @@ def test_successful_job_downloads_one_merged_pdf_in_merge_order(tmp_path):
     response = client.post(
         "/jobs",
         files=[
-            ("files", ("first.pdf", pdf_bytes(1), "application/pdf")),
             ("files", ("second.pdf", pdf_bytes(2), "application/pdf")),
+            ("files", ("first.pdf", pdf_bytes(1), "application/pdf")),
         ],
         data={"merge_order": '["second.pdf","first.pdf"]', "output_filename": "ordered.pdf"},
     )
@@ -74,6 +74,25 @@ def test_successful_job_downloads_one_merged_pdf_in_merge_order(tmp_path):
     assert job["phase"] == "ready"
     assert download.status_code == 200
     assert download.headers["content-disposition"] == 'attachment; filename="ordered.pdf"'
+    assert len(PdfReader(__import__("io").BytesIO(download.content)).pages) == 3
+
+
+def test_duplicate_filenames_are_merged_without_overwrite(tmp_path):
+    job_store.root = tmp_path
+    response = client.post(
+        "/jobs",
+        files=[
+            ("files", ("same.pdf", pdf_bytes(1), "application/pdf")),
+            ("files", ("same.pdf", pdf_bytes(2), "application/pdf")),
+        ],
+        data={"merge_order": '["same.pdf","same.pdf"]', "output_filename": "duplicates.pdf"},
+    )
+    job_id = response.json()["job_id"]
+
+    job = wait_until_ready(job_id)
+    download = client.get(f"/jobs/{job_id}/download")
+
+    assert job["phase"] == "ready"
     assert len(PdfReader(__import__("io").BytesIO(download.content)).pages) == 3
 
 

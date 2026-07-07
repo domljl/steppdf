@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import shutil
 import subprocess
@@ -63,8 +62,8 @@ class JobStore:
         input_dir = job_dir / "inputs"
         input_dir.mkdir(parents=True, exist_ok=True)
         saved_files: list[Path] = []
-        for upload in files:
-            path = input_dir / Path(upload.filename or "file").name
+        for index, upload in enumerate(files):
+            path = input_dir / f"{index}-{Path(upload.filename or 'file').name}"
             path.write_bytes(await upload.read())
             saved_files.append(path)
 
@@ -75,14 +74,15 @@ class JobStore:
             message="Queued",
             output_filename=output_filename or "merged_by_dom.pdf",
         )
-        asyncio.create_task(self._run(job_id, saved_files, json.loads(merge_order or "[]"), job_dir))
+        _ = merge_order
+        asyncio.create_task(self._run(job_id, saved_files, job_dir))
         return self.snapshot(job_id)
 
-    async def _run(self, job_id: str, files: list[Path], merge_order: list[str], job_dir: Path) -> None:
+    async def _run(self, job_id: str, files: list[Path], job_dir: Path) -> None:
         try:
             async with asyncio.timeout(JOB_TIMEOUT_SECONDS):
                 async with self.semaphore:
-                    pdfs = await self._convert_files(job_id, files, merge_order, job_dir)
+                    pdfs = await self._convert_files(job_id, files, job_dir)
                     await self._set(job_id, "merging", 80, "Merging")
                     output = job_dir / "merged.pdf"
                     merge_pdfs(pdfs, output)
@@ -93,16 +93,13 @@ class JobStore:
         except Exception as error:
             await self._set(job_id, "failed", 100, str(error))
 
-    async def _convert_files(self, job_id: str, files: list[Path], merge_order: list[str], job_dir: Path) -> list[Path]:
-        by_name = {path.name: path for path in files}
-        ordered = [by_name[name] for name in merge_order if name in by_name]
-        ordered.extend(path for path in files if path.name not in merge_order)
+    async def _convert_files(self, job_id: str, files: list[Path], job_dir: Path) -> list[Path]:
         converted_dir = job_dir / "converted"
         converted_dir.mkdir(exist_ok=True)
         pdfs: list[Path] = []
 
-        for index, path in enumerate(ordered, start=1):
-            await self._set(job_id, "converting", round((index - 1) / len(ordered) * 70), f"Converting {index} of {len(ordered)}")
+        for index, path in enumerate(files, start=1):
+            await self._set(job_id, "converting", round((index - 1) / len(files) * 70), f"Converting {index} of {len(files)}")
             if path.suffix.lower() == ".pdf":
                 pdfs.append(path)
                 continue

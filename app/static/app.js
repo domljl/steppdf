@@ -165,7 +165,11 @@ function pollJob(jobId) {
     .then((job) => {
       showProgress(job.message, job.percent);
       if (job.phase === "ready") {
-        progressPanel.innerHTML = `<a href="/jobs/${job.job_id}/download">Download ${job.output_filename}</a>`;
+        progressPanel.replaceChildren();
+        const link = document.createElement("a");
+        link.href = `/jobs/${job.job_id}/download`;
+        link.textContent = `Download ${job.output_filename}`;
+        progressPanel.append(link);
       }
       if (!["ready", "failed", "expired"].includes(job.phase)) {
         window.setTimeout(() => pollJob(job.job_id), 500);
