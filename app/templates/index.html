@@ -13,39 +13,49 @@
         <header class="header">
           <div>
             <h1>Step PDF</h1>
-            <p>Convert presentations and documents into one ordered PDF.</p>
+            <p>Convert decks and documents into one ordered PDF.</p>
           </div>
+          <span class="retention">Auto-deletes after 1 hour</span>
         </header>
 
         <form class="workspace" id="conversion-form" data-max-files="50" data-max-total-bytes="1073741824">
-          <p class="notice">Files are processed for conversion and automatically deleted after one hour.</p>
+          <div class="upload-column">
+            <p class="notice">Files are processed for conversion and automatically deleted after one hour. Accepted: PPTX, PPT, DOCX, and PDF.</p>
 
-          <label class="dropzone" id="dropzone">
-            <input id="file-input" type="file" multiple accept=".pptx,.ppt,.docx,.pdf">
-            <span>Drop documents here</span>
-            <small>or browse for PPTX, PPT, DOCX, and PDF files</small>
-          </label>
-          <div class="message" id="file-message" role="status" aria-live="polite"></div>
+            <label class="dropzone" id="dropzone">
+              <input id="file-input" type="file" multiple accept=".pptx,.ppt,.docx,.pdf">
+              <span>Drop documents here</span>
+              <small>or browse files</small>
+            </label>
+            <div class="message" id="file-message" role="status" aria-live="polite"></div>
+          </div>
 
-          <section class="panel" aria-labelledby="selected-files-heading">
-            <h2 id="selected-files-heading">Selected files</h2>
-            <ol class="file-list" id="selected-files">
-              <li class="empty-list">No files selected yet.</li>
-            </ol>
-            <input id="merge-order" name="merge_order" type="hidden" value="[]">
-          </section>
+          <div class="review-column">
+            <section class="panel" aria-labelledby="selected-files-heading">
+              <div class="panel-heading">
+                <h2 id="selected-files-heading">Selected files</h2>
+                <span>Drag to reorder</span>
+              </div>
+              <ol class="file-list" id="selected-files">
+                <li class="empty-list">No files selected yet.</li>
+              </ol>
+              <input id="merge-order" name="merge_order" type="hidden" value="[]">
+            </section>
 
-          <label class="field">
-            <span>Output filename</span>
-            <input name="output_filename" value="{{ default_filename }}">
-          </label>
+            <label class="field">
+              <span>Output filename</span>
+              <input name="output_filename" value="{{ default_filename }}">
+            </label>
 
-          <button id="convert-button" type="button" disabled>Convert</button>
+            <button id="convert-button" type="button" disabled>Convert</button>
 
-          <section class="panel" aria-labelledby="progress-heading">
-            <h2 id="progress-heading">Progress</h2>
-            <div class="empty-list" id="progress-panel">Waiting for files.</div>
-          </section>
+            <section class="panel" aria-labelledby="progress-heading">
+              <div class="panel-heading">
+                <h2 id="progress-heading">Progress</h2>
+              </div>
+              <div class="empty-list" id="progress-panel">Waiting for files.</div>
+            </section>
+          </div>
         </form>
       </section>
     </main>
