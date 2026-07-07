@@ -1,5 +1,5 @@
 ---
-title: Step PDF conversion app PRD
+title: StepPDF conversion app PRD
 labels:
   - ready-for-agent
 ---
@@ -10,7 +10,7 @@ The User Group needs a hosted app at `steppdf.dominiclim.dev` where anyone with 
 
 ## Solution
 
-Build Step PDF as a single FastAPI web app deployed as a Docker-based Render service. The first screen is the tool itself: a dropzone, draggable file list, Output Filename field defaulting to `merged_by_dom.pdf`, convert button, progress display, and final download or failure state.
+Build StepPDF as a single FastAPI web app deployed as a Docker-based Render service. The first screen is the tool itself: a dropzone, draggable file list, Output Filename field defaulting to `merged_by_dom.pdf`, convert button, progress display, and final download or failure state.
 
 Users can upload up to 50 Accepted Documents with a total input size of 1 GB. Accepted Documents are `.pptx`, `.ppt`, `.docx`, and `.pdf`. Office documents are converted to PDF with LibreOffice, existing PDFs pass through, and every input is combined into one Merged PDF using the user-controlled Merge Order. If any input fails, the whole Conversion Job fails without producing a partial result.
 
@@ -18,7 +18,7 @@ Conversion Jobs run asynchronously, with at most two jobs running at once by def
 
 ## User Stories
 
-1. As a user with the Step PDF link, I want to open the app without an account, so that I can start converting files immediately.
+1. As a user with the StepPDF link, I want to open the app without an account, so that I can start converting files immediately.
 2. As a user, I want the first screen to be the conversion tool, so that I do not have to pass through a landing page.
 3. As a user, I want to drag files onto a dropzone, so that I can quickly add documents.
 4. As a user, I want to browse for files, so that I can upload documents without drag-and-drop.

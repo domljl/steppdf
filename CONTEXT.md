@@ -1,6 +1,6 @@
-# Step PDF
+# StepPDF
 
-Step PDF is a hosted document conversion app for a small trusted group.
+StepPDF is a hosted document conversion app for a small trusted group.
 
 ## Language
 

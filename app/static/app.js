@@ -1,5 +1,7 @@
 const input = document.querySelector("#file-input");
-const dropzone = document.querySelector("#dropzone");
+const addMoreButton = document.querySelector("#add-more-button");
+const startPage = document.querySelector("#start-page");
+const filesPage = document.querySelector("#files-page");
 const selectedFiles = document.querySelector("#selected-files");
 const form = document.querySelector("#conversion-form");
 const fileMessage = document.querySelector("#file-message");
@@ -9,11 +11,11 @@ const progressPanel = document.querySelector("#progress-panel");
 const acceptedExtensions = new Set(["pptx", "ppt", "docx", "pdf"]);
 const maxFiles = Number(form.dataset.maxFiles);
 const maxTotalBytes = Number(form.dataset.maxTotalBytes);
-const emptyStateClass = "mt-1 text-sm text-zinc-500";
-const fileRowClass = "grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-2 rounded-2xl border border-white/10 bg-zinc-950/80 p-3 text-sm sm:text-base";
-const fileNameClass = "min-w-0 truncate font-medium text-zinc-100";
-const fileButtonClass = "rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-medium text-zinc-300 transition hover:border-emerald-300/50 hover:text-emerald-100 disabled:cursor-not-allowed disabled:opacity-40";
-const downloadClass = "inline-flex w-fit rounded-xl bg-emerald-300 px-5 py-3 font-semibold text-zinc-950 no-underline transition hover:bg-emerald-200 active:translate-y-px";
+const emptyStateClass = "mt-1 text-sm text-[var(--muted-foreground)]";
+const fileRowClass = "grid cursor-grab gap-3 rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] p-4 text-sm shadow-[0_8px_32px_rgba(0,0,0,0.22)] ring-1 ring-[color-mix(in_srgb,var(--foreground)_10%,transparent)] active:cursor-grabbing";
+const fileNameClass = "min-w-0 truncate text-center font-medium text-[var(--foreground)]";
+const fileButtonClass = "rounded-full bg-transparent px-3 py-2 text-sm font-medium text-[var(--foreground)] ring-1 ring-[color-mix(in_srgb,var(--foreground)_12%,transparent)] transition hover:ring-[color-mix(in_srgb,var(--accent)_35%,transparent)] disabled:cursor-not-allowed disabled:opacity-40";
+const downloadClass = "inline-flex w-fit rounded-full bg-transparent px-5 py-3 font-medium text-[var(--foreground)] no-underline shadow-[0_8px_32px_rgba(0,0,0,0.22)] ring-1 ring-[color-mix(in_srgb,var(--foreground)_12%,transparent)] transition hover:ring-[color-mix(in_srgb,var(--accent)_35%,transparent)] active:scale-[0.97]";
 let chosenFiles = [];
 let nextFileId = 1;
 
@@ -25,17 +27,16 @@ function showMessage(message) {
   fileMessage.textContent = message;
 }
 
-function syncFileInput() {
-  const transfer = new DataTransfer();
-  for (const entry of chosenFiles) {
-    transfer.items.add(entry.file);
-  }
-  input.files = transfer.files;
-}
-
 function syncMergeOrder() {
+  const hasFiles = chosenFiles.length > 0;
   mergeOrderInput.value = JSON.stringify(chosenFiles.map((entry) => entry.file.name));
-  convertButton.disabled = chosenFiles.length === 0;
+  convertButton.disabled = !hasFiles;
+  startPage.classList.toggle("hidden", hasFiles);
+  startPage.classList.toggle("grid", !hasFiles);
+  startPage.hidden = hasFiles;
+  filesPage.classList.toggle("hidden", !hasFiles);
+  filesPage.classList.toggle("grid", hasFiles);
+  filesPage.hidden = !hasFiles;
 }
 
 function showProgress(message, percent) {
@@ -45,7 +46,7 @@ function showProgress(message, percent) {
 function showFailure(job) {
   progressPanel.replaceChildren();
   const message = document.createElement("p");
-  message.className = "font-semibold text-red-300";
+  message.className = "font-medium text-[var(--accent)]";
   message.textContent = job.message;
   progressPanel.append(message);
 
@@ -53,10 +54,10 @@ function showFailure(job) {
     const details = document.createElement("details");
     details.className = "mt-3";
     const summary = document.createElement("summary");
-    summary.className = "cursor-pointer font-semibold text-emerald-200";
+    summary.className = "cursor-pointer font-medium text-[var(--accent)]";
     summary.textContent = "Technical details";
     const pre = document.createElement("pre");
-    pre.className = "mt-3 overflow-auto rounded-xl border border-white/10 bg-zinc-950 p-3 text-sm text-zinc-300";
+    pre.className = "mt-3 overflow-auto rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] p-3 text-sm text-[var(--foreground)] ring-1 ring-[color-mix(in_srgb,var(--foreground)_10%,transparent)]";
     pre.textContent = job.error_detail;
     details.append(summary, pre);
     progressPanel.append(details);
@@ -101,10 +102,18 @@ function renderFiles() {
     item.draggable = true;
     item.dataset.fileId = entry.id;
 
+    const preview = document.createElement("div");
+    preview.className = "grid aspect-[3/4] place-items-center bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] text-sm font-medium uppercase text-[var(--muted-foreground)] ring-1 ring-[color-mix(in_srgb,var(--foreground)_10%,transparent)]";
+    preview.textContent = extensionFor(entry.file);
+    item.append(preview);
+
     const name = document.createElement("span");
     name.className = fileNameClass;
     name.textContent = entry.file.name;
     item.append(name);
+
+    const actions = document.createElement("div");
+    actions.className = "flex justify-center gap-2";
 
     const up = document.createElement("button");
     up.type = "button";
@@ -112,7 +121,7 @@ function renderFiles() {
     up.textContent = "Up";
     up.disabled = index === 0;
     up.addEventListener("click", () => moveFile(index, index - 1));
-    item.append(up);
+    actions.append(up);
 
     const down = document.createElement("button");
     down.type = "button";
@@ -120,14 +129,15 @@ function renderFiles() {
     down.textContent = "Down";
     down.disabled = index === chosenFiles.length - 1;
     down.addEventListener("click", () => moveFile(index, index + 1));
-    item.append(down);
+    actions.append(down);
 
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = fileButtonClass;
     remove.textContent = "Remove";
     remove.addEventListener("click", () => removeFile(entry.id));
-    item.append(remove);
+    actions.append(remove);
+    item.append(actions);
 
     item.addEventListener("dragstart", (event) => {
       event.dataTransfer.setData("text/plain", String(index));
@@ -135,6 +145,7 @@ function renderFiles() {
     item.addEventListener("dragover", (event) => event.preventDefault());
     item.addEventListener("drop", (event) => {
       event.preventDefault();
+      event.stopPropagation();
       moveFile(Number(event.dataTransfer.getData("text/plain")), index);
     });
 
@@ -153,16 +164,17 @@ function addFiles(files) {
 
   chosenFiles = [
     ...chosenFiles,
-    ...files.map((file) => ({ id: nextFileId++, file })),
+    ...files.map((file) => ({
+      id: nextFileId++,
+      file,
+    })),
   ];
   showMessage("");
-  syncFileInput();
   renderFiles();
 }
 
 function removeFile(fileId) {
   chosenFiles = chosenFiles.filter((entry) => entry.id !== fileId);
-  syncFileInput();
   renderFiles();
 }
 
@@ -173,19 +185,21 @@ function moveFile(fromIndex, toIndex) {
 
   const [entry] = chosenFiles.splice(fromIndex, 1);
   chosenFiles.splice(toIndex, 0, entry);
-  syncFileInput();
   renderFiles();
 }
 
 input.addEventListener("change", () => {
   addFiles([...input.files]);
+  input.value = "";
 });
 
-dropzone.addEventListener("dragover", (event) => {
+addMoreButton.addEventListener("click", () => input.click());
+
+document.body.addEventListener("dragover", (event) => {
   event.preventDefault();
 });
 
-dropzone.addEventListener("drop", (event) => {
+document.body.addEventListener("drop", (event) => {
   event.preventDefault();
   addFiles([...event.dataTransfer.files]);
 });

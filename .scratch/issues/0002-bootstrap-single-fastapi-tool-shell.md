@@ -10,7 +10,7 @@ labels:
 
 ## What to build
 
-Create the initial Step PDF application as a single FastAPI app that serves the first-screen tool shell and a basic health endpoint. The app should be Docker-ready for Render and should establish the simplest structure needed for later Conversion Job slices without adding unused abstractions.
+Create the initial StepPDF application as a single FastAPI app that serves the first-screen tool shell and a basic health endpoint. The app should be Docker-ready for Render and should establish the simplest structure needed for later Conversion Job slices without adding unused abstractions.
 
 ## Acceptance criteria
 

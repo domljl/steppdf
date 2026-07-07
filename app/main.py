@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.jobs import job_store
 
-app = FastAPI(title="Step PDF")
+app = FastAPI(title="StepPDF")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 templates = Jinja2Templates(directory="app/templates")

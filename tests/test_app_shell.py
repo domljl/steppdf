@@ -17,14 +17,18 @@ def test_homepage_is_conversion_tool_shell():
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "Step PDF" in response.text
-    assert "Drop documents here" in response.text
+    assert "StepPDF" in response.text
+    assert "Select files" in response.text
+    assert "Add more files" in response.text
+    assert "Auto convert and combine PDFs in the order you want." in response.text
     assert "Selected files" in response.text
     assert "Output filename" in response.text
     assert "merged_by_dom.pdf" in response.text
-    assert "Convert" in response.text
+    assert "Merge PDF" in response.text
     assert "Progress" in response.text
     assert 'id="file-input"' in response.text
+    assert 'id="start-page"' in response.text
+    assert 'id="files-page"' in response.text
     assert 'id="selected-files"' in response.text
     assert "/static/app.js" in response.text
 
@@ -35,7 +39,7 @@ def test_homepage_exposes_accepted_document_constraints():
     assert 'data-max-files="50"' in response.text
     assert 'data-max-total-bytes="1073741824"' in response.text
     assert 'name="merge_order"' in response.text
-    assert "Files are processed for conversion and automatically deleted after one hour." in response.text
+    assert "Files are automatically deleted after one hour." in response.text
 
 
 def test_upload_script_supports_validation_remove_and_reorder():
@@ -48,6 +52,7 @@ def test_upload_script_supports_validation_remove_and_reorder():
     assert "removeFile" in response.text
     assert "moveFile" in response.text
     assert "mergeOrderInput.value" in response.text
+    assert 'document.body.addEventListener("drop"' in response.text
 
 
 def test_upload_script_submits_jobs_and_polls_progress():

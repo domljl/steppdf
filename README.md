@@ -1,4 +1,4 @@
-# Step PDF
+# StepPDF
 
 Hosted document conversion app for a small trusted group.
 
