@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from pypdf import PdfReader, PdfWriter
 
 from app.main import app
-from app.jobs import job_store
+from app.jobs import JobStore, job_store
 
 
 client = TestClient(app)
@@ -162,3 +162,58 @@ def test_failed_file_fails_whole_job_without_download(tmp_path):
     assert job["error_file"] == "bad.pptx"
     assert "LibreOffice said no" in job["error_detail"]
     assert download.status_code == 404
+
+
+def test_ready_job_metadata_survives_restart(tmp_path):
+    job_store.root = tmp_path
+    response = client.post(
+        "/jobs",
+        files=[("files", ("one.pdf", pdf_bytes(1), "application/pdf"))],
+        data={"merge_order": '["one.pdf"]', "output_filename": "kept.pdf"},
+    )
+    job_id = response.json()["job_id"]
+    assert wait_until_ready(job_id)["phase"] == "ready"
+
+    restarted = JobStore(root=tmp_path)
+
+    assert restarted.snapshot(job_id)["phase"] == "ready"
+    assert (tmp_path / job_id / "job.json").exists()
+
+
+def test_unfinished_jobs_are_failed_after_restart(tmp_path):
+    job_dir = tmp_path / "queued"
+    job_dir.mkdir()
+    (job_dir / "job.json").write_text(
+        '{"job_id":"queued","phase":"converting","percent":10,"message":"Converting",'
+        '"output_filename":"out.pdf","output_path":null,"error_file":null,"error_detail":null,'
+        '"created_at":1.0,"expires_at":9999.0}'
+    )
+
+    restarted = JobStore(root=tmp_path, clock=lambda: 2.0)
+
+    job = restarted.snapshot("queued")
+    assert job["phase"] == "failed"
+    assert job["message"] == "Job stopped because the app restarted."
+
+
+def test_expired_jobs_are_reported_expired_and_deleted(tmp_path):
+    now = 1_000.0
+    store = JobStore(root=tmp_path, clock=lambda: now, expiry_seconds=1)
+    job_dir = tmp_path / "done"
+    job_dir.mkdir(parents=True)
+    output = job_dir / "merged.pdf"
+    output.write_bytes(pdf_bytes(1))
+    store.jobs["done"] = store.job_class(
+        job_id="done",
+        phase="ready",
+        percent=100,
+        message="Ready",
+        output_filename="out.pdf",
+        output_path=str(output),
+        created_at=now - 2,
+        expires_at=now - 1,
+    )
+    store.persist("done")
+
+    assert store.snapshot("done")["phase"] == "expired"
+    assert not job_dir.exists()
