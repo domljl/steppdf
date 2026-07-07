@@ -3,7 +3,7 @@ FROM node:26-slim AS frontend
 WORKDIR /app/frontend
 
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
-RUN corepack enable \
+RUN npm install --global pnpm@11.10.0 \
     && pnpm install --frozen-lockfile
 
 COPY frontend ./
