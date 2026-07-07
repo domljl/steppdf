@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Step PDF</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="page">
+      <section class="tool">
+        <header class="header">
+          <div>
+            <h1>Step PDF</h1>
+            <p>Convert presentations and documents into one ordered PDF.</p>
+          </div>
+        </header>
+
+        <form class="workspace">
+          <label class="dropzone">
+            <input type="file" multiple accept=".pptx,.ppt,.docx,.pdf">
+            <span>Drop documents here</span>
+            <small>or browse for PPTX, PPT, DOCX, and PDF files</small>
+          </label>
+
+          <section class="panel" aria-labelledby="selected-files-heading">
+            <h2 id="selected-files-heading">Selected files</h2>
+            <div class="empty-list">No files selected yet.</div>
+          </section>
+
+          <label class="field">
+            <span>Output filename</span>
+            <input name="output_filename" value="{{ default_filename }}">
+          </label>
+
+          <button type="button">Convert</button>
+
+          <section class="panel" aria-labelledby="progress-heading">
+            <h2 id="progress-heading">Progress</h2>
+            <div class="empty-list">Waiting for files.</div>
+          </section>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

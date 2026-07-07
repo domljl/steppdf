@@ -1,0 +1,134 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f7f8;
+  color: #182026;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.page {
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.tool {
+  width: min(960px, 100%);
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 36px;
+  line-height: 1.1;
+}
+
+.header p {
+  margin-top: 8px;
+  color: #50616b;
+}
+
+.workspace {
+  display: grid;
+  gap: 16px;
+}
+
+.dropzone,
+.panel,
+.field {
+  border: 1px solid #d7dee2;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.dropzone {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.dropzone input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
+.dropzone span {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.dropzone small {
+  margin-top: 8px;
+  color: #50616b;
+}
+
+.panel {
+  padding: 20px;
+}
+
+.panel h2,
+.field span {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.empty-list {
+  margin-top: 12px;
+  color: #64757f;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.field input {
+  width: 100%;
+  border: 1px solid #c7d0d6;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+button {
+  width: fit-content;
+  border: 0;
+  border-radius: 6px;
+  background: #12715b;
+  color: #fff;
+  padding: 11px 18px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+}
